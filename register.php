@@ -13,6 +13,7 @@ if(isUserLoggedIn()) { header("Location: account.php"); die(); }
 //Forms posted
 if(!empty($_POST))
 {
+	$token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	$errors = array();
 	$email = trim($_POST["email"]);
 	$username = trim($_POST["username"]);
@@ -20,8 +21,8 @@ if(!empty($_POST))
 	$password = trim($_POST["password"]);
 	$confirm_pass = trim($_POST["passwordc"]);
 	$captcha = md5($_POST["captcha"]);
-	
-	
+
+
 	if ($captcha != $_SESSION['captcha'])
 	{
 		$errors[] = lang("CAPTCHA_FAIL");
@@ -54,16 +55,16 @@ if(!empty($_POST))
 	}
 	//End data validation
 	if(count($errors) == 0)
-	{	
+	{
 		//Construct a user object
 		$user = new User($username,$displayname,$password,$email);
-		
+
 		//Checking this flag tells us whether there were any errors such as possible data duplication occured
 		if(!$user->status)
 		{
 			if($user->username_taken) $errors[] = lang("ACCOUNT_USERNAME_IN_USE",array($username));
 			if($user->displayname_taken) $errors[] = lang("ACCOUNT_DISPLAYNAME_IN_USE",array($displayname));
-			if($user->email_taken) 	  $errors[] = lang("ACCOUNT_EMAIL_IN_USE",array($email));		
+			if($user->email_taken) 	  $errors[] = lang("ACCOUNT_EMAIL_IN_USE",array($email));
 		}
 		else
 		{
@@ -97,11 +98,11 @@ echo "
 <div id='main'>";
 
 echo resultBlock($errors,$successes);
-
 echo "
 <div id='regbox'>
-<form name='newUser' action='".$_SERVER['PHP_SELF']."' method='post'>
-
+<form name='newUser' action='".$_SERVER['PHP_SELF']."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <p>
 <label>User Name:</label>
 <input type='text' name='username' />

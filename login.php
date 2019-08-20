@@ -11,12 +11,13 @@ if (!securePage($_SERVER['PHP_SELF'])){die();}
 if(isUserLoggedIn()) { header("Location: account.php"); die(); }
 
 //Forms posted
-if(!empty($_POST))
-{
+if(!empty($_POST)){  
+    $token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
+
 	$errors = array();
 	$username = sanitize(trim($_POST["username"]));
 	$password = trim($_POST["password"]);
-	
+
 	//Perform some validation
 	//Feel free to edit / change as required
 	if($username == "")
@@ -47,7 +48,7 @@ if(!empty($_POST))
 			{
 				//Hash the password and use the salt from the database to compare the password.
 				$entered_pass = generateHash($password,$userdetails["password"]);
-				
+
 				if($entered_pass != $userdetails["password"])
 				{
 					//Again, we know the password is at fault here, but lets not give away the combination incase of someone bruteforcing
@@ -56,7 +57,7 @@ if(!empty($_POST))
 				else
 				{
 					//Passwords match! we're good to go'
-					
+
 					//Construct a new logged in user object
 					//Transfer some db data to the session object
 					$loggedInUser = new loggedInUser();
@@ -66,11 +67,11 @@ if(!empty($_POST))
 					$loggedInUser->title = $userdetails["title"];
 					$loggedInUser->displayname = $userdetails["display_name"];
 					$loggedInUser->username = $userdetails["user_name"];
-					
+
 					//Update last sign in
 					$loggedInUser->updateLastSignIn();
 					$_SESSION["userCakeUser"] = $loggedInUser;
-					
+
 					//Redirect to user account page
 					header("Location: account.php");
 					die();
@@ -101,7 +102,9 @@ echo resultBlock($errors,$successes);
 
 echo "
 <div id='regbox'>
-<form name='login' action='".$_SERVER['PHP_SELF']."' method='post'>
+<form name='login' action='".$_SERVER['PHP_SELF']."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <p>
 <label>Username:</label>
 <input type='text' name='username' />

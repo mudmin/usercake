@@ -10,17 +10,18 @@ $pageId = $_GET['id'];
 
 //Check if selected pages exist
 if(!pageIdExists($pageId)){
-	header("Location: admin_pages.php"); die();	
+	header("Location: admin_pages.php"); die();
 }
 
 $pageDetails = fetchPageDetails($pageId); //Fetch information specific to page
 
 //Forms posted
 if(!empty($_POST)){
+	  $token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	$update = 0;
-	
+
 	if(!empty($_POST['private'])){ $private = $_POST['private']; }
-	
+
 	//Toggle private page setting
 	if (isset($private) AND $private == 'Yes'){
 		if ($pageDetails['private'] == 0){
@@ -37,10 +38,10 @@ if(!empty($_POST)){
 			$successes[] = lang("PAGE_PRIVATE_TOGGLED", array("public"));
 		}
 		else {
-			$errors[] = lang("SQL_ERROR");	
+			$errors[] = lang("SQL_ERROR");
 		}
 	}
-	
+
 	//Remove permission level(s) access to page
 	if(!empty($_POST['removePermission'])){
 		$remove = $_POST['removePermission'];
@@ -48,11 +49,11 @@ if(!empty($_POST)){
 			$successes[] = lang("PAGE_ACCESS_REMOVED", array($deletion_count));
 		}
 		else {
-			$errors[] = lang("SQL_ERROR");	
+			$errors[] = lang("SQL_ERROR");
 		}
-		
+
 	}
-	
+
 	//Add permission level(s) access to page
 	if(!empty($_POST['addPermission'])){
 		$add = $_POST['addPermission'];
@@ -60,10 +61,10 @@ if(!empty($_POST)){
 			$successes[] = lang("PAGE_ACCESS_ADDED", array($addition_count));
 		}
 		else {
-			$errors[] = lang("SQL_ERROR");	
+			$errors[] = lang("SQL_ERROR");
 		}
 	}
-	
+
 	$pageDetails = fetchPageDetails($pageId);
 }
 
@@ -90,7 +91,9 @@ echo "
 echo resultBlock($errors,$successes);
 
 echo "
-<form name='adminPage' action='".$_SERVER['PHP_SELF']."?id=".$pageId."' method='post'>
+<form name='adminPage' action='".$_SERVER['PHP_SELF']."?id=".$pageId."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <input type='hidden' name='process' value='1'>
 <table class='admin'>
 <tr><td>
@@ -112,7 +115,7 @@ if ($pageDetails['private'] == 1){
 	echo "<input type='checkbox' name='private' id='private' value='Yes' checked>";
 }
 else {
-	echo "<input type='checkbox' name='private' id='private' value='Yes'>";	
+	echo "<input type='checkbox' name='private' id='private' value='Yes'>";
 }
 
 echo "

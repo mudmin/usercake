@@ -7,11 +7,11 @@ http://usercake.com
 require_once("models/config.php");
 if (!securePage($_SERVER['PHP_SELF'])){die();}
 
-//User has confirmed they want their password changed 
+//User has confirmed they want their password changed
 if(!empty($_GET["confirm"]))
 {
 	$token = trim($_GET["confirm"]);
-	
+
 	if($token == "" || !validateActivationToken($token,TRUE))
 	{
 		$errors[] = lang("FORGOTPASS_INVALID_TOKEN");
@@ -21,20 +21,20 @@ if(!empty($_GET["confirm"]))
 		$rand_pass = getUniqueCode(15); //Get unique code
 		$secure_pass = generateHash($rand_pass); //Generate random hash
 		$userdetails = fetchUserDetails(NULL,$token); //Fetchs user details
-		$mail = new userCakeMail();		
-		
+		$mail = new userCakeMail();
+
 		//Setup our custom hooks
 		$hooks = array(
 			"searchStrs" => array("#GENERATED-PASS#","#USERNAME#"),
 			"subjectStrs" => array($rand_pass,$userdetails["display_name"])
 			);
-		
+
 		if(!$mail->newTemplateMsg("your-lost-password.txt",$hooks))
 		{
 			$errors[] = lang("MAIL_TEMPLATE_BUILD_ERROR");
 		}
 		else
-		{	
+		{
 			if(!$mail->sendMail($userdetails["email"],"Your new password"))
 			{
 				$errors[] = lang("MAIL_ERROR");
@@ -46,7 +46,7 @@ if(!empty($_GET["confirm"]))
 					$errors[] = lang("SQL_ERROR");
 				}
 				else
-				{	
+				{
 					if(!flagLostPasswordRequest($userdetails["user_name"],0))
 					{
 						$errors[] = lang("SQL_ERROR");
@@ -64,16 +64,16 @@ if(!empty($_GET["confirm"]))
 if(!empty($_GET["deny"]))
 {
 	$token = trim($_GET["deny"]);
-	
+
 	if($token == "" || !validateActivationToken($token,TRUE))
 	{
 		$errors[] = lang("FORGOTPASS_INVALID_TOKEN");
 	}
 	else
 	{
-		
+
 		$userdetails = fetchUserDetails(NULL,$token);
-		
+
 		if(!flagLostPasswordRequest($userdetails["user_name"],0))
 		{
 			$errors[] = lang("SQL_ERROR");
@@ -87,12 +87,13 @@ if(!empty($_GET["deny"]))
 //Forms posted
 if(!empty($_POST))
 {
+	  $token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	$email = $_POST["email"];
 	$username = sanitize($_POST["username"]);
-	
+
 	//Perform some validation
 	//Feel free to edit / change as required
-	
+
 	if(trim($email) == "")
 	{
 		$errors[] = lang("ACCOUNT_SPECIFY_EMAIL");
@@ -102,7 +103,7 @@ if(!empty($_POST))
 	{
 		$errors[] = lang("ACCOUNT_INVALID_EMAIL");
 	}
-	
+
 	if(trim($username) == "")
 	{
 		$errors[] = lang("ACCOUNT_SPECIFY_USERNAME");
@@ -111,10 +112,10 @@ if(!empty($_POST))
 	{
 		$errors[] = lang("ACCOUNT_INVALID_USERNAME");
 	}
-	
+
 	if(count($errors) == 0)
 	{
-		
+
 		//Check that the username / email are associated to the same account
 		if(!emailUsernameLinked($email,$username))
 		{
@@ -132,19 +133,19 @@ if(!empty($_POST))
 			{
 				//Email the user asking to confirm this change password request
 				//We can use the template builder here
-				
+
 				//We use the activation token again for the url key it gets regenerated everytime it's used.
-				
+
 				$mail = new userCakeMail();
 				$confirm_url = lang("CONFIRM")."\n".$websiteUrl."forgot-password.php?confirm=".$userdetails["activation_token"];
 				$deny_url = lang("DENY")."\n".$websiteUrl."forgot-password.php?deny=".$userdetails["activation_token"];
-				
+
 				//Setup our custom hooks
 				$hooks = array(
 					"searchStrs" => array("#CONFIRM-URL#","#DENY-URL#","#USERNAME#"),
 					"subjectStrs" => array($confirm_url,$deny_url,$userdetails["user_name"])
 					);
-				
+
 				if(!$mail->newTemplateMsg("lost-password-request.txt",$hooks))
 				{
 					$errors[] = lang("MAIL_TEMPLATE_BUILD_ERROR");
@@ -163,7 +164,7 @@ if(!empty($_POST))
 							$errors[] = lang("SQL_ERROR");
 						}
 						else {
-							
+
 							$successes[] = lang("FORGOTPASS_REQUEST_SUCCESS");
 						}
 					}
@@ -193,12 +194,14 @@ echo resultBlock($errors,$successes);
 
 echo "
 <div id='regbox'>
-<form name='newLostPass' action='".$_SERVER['PHP_SELF']."' method='post'>
+<form name='newLostPass' action='".$_SERVER['PHP_SELF']."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <p>
 <label>Username:</label>
 <input type='text' name='username' />
 </p>
-<p>    
+<p>
 <label>Email:</label>
 <input type='text' name='email' />
 </p>

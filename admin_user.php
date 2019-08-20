@@ -17,7 +17,8 @@ $userdetails = fetchUserDetails(NULL, NULL, $userId); //Fetch user details
 
 //Forms posted
 if(!empty($_POST))
-{	
+{
+	  $token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	//Delete selected account
 	if(!empty($_POST['delete'])){
 		$deletions = $_POST['delete'];
@@ -33,7 +34,7 @@ if(!empty($_POST))
 		//Update display name
 		if ($userdetails['display_name'] != $_POST['display']){
 			$displayname = trim($_POST['display']);
-			
+
 			//Validate display name
 			if(displayNameExists($displayname))
 			{
@@ -54,12 +55,12 @@ if(!empty($_POST))
 					$errors[] = lang("SQL_ERROR");
 				}
 			}
-			
+
 		}
 		else {
 			$displayname = $userdetails['display_name'];
 		}
-		
+
 		//Activate account
 		if(isset($_POST['activate']) && $_POST['activate'] == "activate"){
 			if (setUserActive($userdetails['activation_token'])){
@@ -69,11 +70,11 @@ if(!empty($_POST))
 				$errors[] = lang("SQL_ERROR");
 			}
 		}
-		
+
 		//Update email
 		if ($userdetails['email'] != $_POST['email']){
 			$email = trim($_POST["email"]);
-			
+
 			//Validate email
 			if(!isValidEmail($email))
 			{
@@ -92,11 +93,11 @@ if(!empty($_POST))
 				}
 			}
 		}
-		
+
 		//Update title
 		if ($userdetails['title'] != $_POST['title']){
 			$title = trim($_POST['title']);
-			
+
 			//Validate title
 			if(minMaxRange(1,50,$title))
 			{
@@ -111,7 +112,7 @@ if(!empty($_POST))
 				}
 			}
 		}
-		
+
 		//Remove permission level
 		if(!empty($_POST['removePermission'])){
 			$remove = $_POST['removePermission'];
@@ -122,7 +123,7 @@ if(!empty($_POST))
 				$errors[] = lang("SQL_ERROR");
 			}
 		}
-		
+
 		if(!empty($_POST['addPermission'])){
 			$add = $_POST['addPermission'];
 			if ($addition_count = addPermission($add, $userId)){
@@ -132,7 +133,7 @@ if(!empty($_POST))
 				$errors[] = lang("SQL_ERROR");
 			}
 		}
-		
+
 		$userdetails = fetchUserDetails(NULL, NULL, $userId);
 	}
 }
@@ -160,7 +161,9 @@ echo "
 echo resultBlock($errors,$successes);
 
 echo "
-<form name='adminUser' action='".$_SERVER['PHP_SELF']."?id=".$userId."' method='post'>
+<form name='adminUser' action='".$_SERVER['PHP_SELF']."?id=".$userId."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <table class='admin'><tr><td>
 <h3>User Information</h3>
 <div id='regbox'>
@@ -185,7 +188,7 @@ echo "
 
 //Display activation link, if account inactive
 if ($userdetails['active'] == '1'){
-	echo "Yes";	
+	echo "Yes";
 }
 else{
 	echo "No
@@ -211,7 +214,7 @@ echo "
 
 //Last sign in, interpretation
 if ($userdetails['last_sign_in_stamp'] == '0'){
-	echo "Never";	
+	echo "Never";
 }
 else {
 	echo date("j M, Y", $userdetails['last_sign_in_stamp']);

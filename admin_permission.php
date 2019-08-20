@@ -10,14 +10,14 @@ $permissionId = $_GET['id'];
 
 //Check if selected permission level exists
 if(!permissionIdExists($permissionId)){
-	header("Location: admin_permissions.php"); die();	
+	header("Location: admin_permissions.php"); die();
 }
 
 $permissionDetails = fetchPermissionDetails($permissionId); //Fetch information specific to permission level
 
 //Forms posted
 if(!empty($_POST)){
-	
+  $token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	//Delete selected permission level
 	if(!empty($_POST['delete'])){
 		$deletions = $_POST['delete'];
@@ -25,7 +25,7 @@ if(!empty($_POST)){
 		$successes[] = lang("PERMISSION_DELETIONS_SUCCESSFUL", array($deletion_count));
 		}
 		else {
-			$errors[] = lang("SQL_ERROR");	
+			$errors[] = lang("SQL_ERROR");
 		}
 	}
 	else
@@ -33,13 +33,13 @@ if(!empty($_POST)){
 		//Update permission level name
 		if($permissionDetails['name'] != $_POST['name']) {
 			$permission = trim($_POST['name']);
-			
+
 			//Validate new name
 			if (permissionNameExists($permission)){
 				$errors[] = lang("ACCOUNT_PERMISSIONNAME_IN_USE", array($permission));
 			}
 			elseif (minMaxRange(1, 50, $permission)){
-				$errors[] = lang("ACCOUNT_PERMISSION_CHAR_LIMIT", array(1, 50));	
+				$errors[] = lang("ACCOUNT_PERMISSION_CHAR_LIMIT", array(1, 50));
 			}
 			else {
 				if (updatePermissionName($permissionId, $permission)){
@@ -50,7 +50,7 @@ if(!empty($_POST)){
 				}
 			}
 		}
-		
+
 		//Remove access to pages
 		if(!empty($_POST['removePermission'])){
 			$remove = $_POST['removePermission'];
@@ -61,7 +61,7 @@ if(!empty($_POST)){
 				$errors[] = lang("SQL_ERROR");
 			}
 		}
-		
+
 		//Add access to pages
 		if(!empty($_POST['addPermission'])){
 			$add = $_POST['addPermission'];
@@ -72,7 +72,7 @@ if(!empty($_POST)){
 				$errors[] = lang("SQL_ERROR");
 			}
 		}
-		
+
 		//Remove access to pages
 		if(!empty($_POST['removePage'])){
 			$remove = $_POST['removePage'];
@@ -83,7 +83,7 @@ if(!empty($_POST)){
 				$errors[] = lang("SQL_ERROR");
 			}
 		}
-		
+
 		//Add access to pages
 		if(!empty($_POST['addPage'])){
 			$add = $_POST['addPage'];
@@ -122,7 +122,9 @@ echo "
 echo resultBlock($errors,$successes);
 
 echo "
-<form name='adminPermission' action='".$_SERVER['PHP_SELF']."?id=".$permissionId."' method='post'>
+<form name='adminPermission' action='".$_SERVER['PHP_SELF']."?id=".$permissionId."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <table class='admin'>
 <tr><td>
 <h3>Permission Information</h3>

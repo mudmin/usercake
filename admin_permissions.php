@@ -10,6 +10,7 @@ if (!securePage($_SERVER['PHP_SELF'])){die();}
 //Forms posted
 if(!empty($_POST))
 {
+	  $token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	//Delete permission levels
 	if(!empty($_POST['delete'])){
 		$deletions = $_POST['delete'];
@@ -17,17 +18,17 @@ if(!empty($_POST))
 		$successes[] = lang("PERMISSION_DELETIONS_SUCCESSFUL", array($deletion_count));
 		}
 	}
-	
+
 	//Create new permission level
 	if(!empty($_POST['newPermission'])) {
 		$permission = trim($_POST['newPermission']);
-		
+
 		//Validate request
 		if (permissionNameExists($permission)){
 			$errors[] = lang("PERMISSION_NAME_IN_USE", array($permission));
 		}
 		elseif (minMaxRange(1, 50, $permission)){
-			$errors[] = lang("PERMISSION_CHAR_LIMIT", array(1, 50));	
+			$errors[] = lang("PERMISSION_CHAR_LIMIT", array(1, 50));
 		}
 		else{
 			if (createPermission($permission)) {
@@ -62,7 +63,9 @@ echo "
 echo resultBlock($errors,$successes);
 
 echo "
-<form name='adminPermissions' action='".$_SERVER['PHP_SELF']."' method='post'>
+<form name='adminPermissions' action='".$_SERVER['PHP_SELF']."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <table class='admin'>
 <tr>
 <th>Delete</th><th>Permission Name</th>
@@ -82,7 +85,7 @@ echo "
 <p>
 <label>Permission Name:</label>
 <input type='text' name='newPermission' />
-</p>                                
+</p>
 <input type='submit' name='Submit' value='Submit' />
 </form>
 </div>

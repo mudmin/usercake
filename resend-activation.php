@@ -10,9 +10,10 @@ if (!securePage($_SERVER['PHP_SELF'])){die();}
 //Forms posted
 if(!empty($_POST) && $emailActivation)
 {
+	$token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	$email = $_POST["email"];
 	$username = $_POST["username"];
-	
+
 	//Perform some validation
 	//Feel free to edit / change as required
 	if(trim($email) == "")
@@ -24,7 +25,7 @@ if(!empty($_POST) && $emailActivation)
 	{
 		$errors[] = lang("ACCOUNT_INVALID_EMAIL");
 	}
-	
+
 	if(trim($username) == "")
 	{
 		$errors[] =  lang("ACCOUNT_SPECIFY_USERNAME");
@@ -33,7 +34,7 @@ if(!empty($_POST) && $emailActivation)
 	{
 		$errors[] = lang("ACCOUNT_INVALID_USERNAME");
 	}
-	
+
 	if(count($errors) == 0)
 	{
 		//Check that the username / email are associated to the same account
@@ -44,7 +45,7 @@ if(!empty($_POST) && $emailActivation)
 		else
 		{
 			$userdetails = fetchUserDetails($username);
-			
+
 			//See if the user's account is activation
 			if($userdetails["active"]==1)
 			{
@@ -59,7 +60,7 @@ if(!empty($_POST) && $emailActivation)
 					$last_request = $userdetails["last_activation_request"];
 					$hours_diff = round((time()-$last_request) / (3600*$resend_activation_threshold),0);
 				}
-				
+
 				if($resend_activation_threshold!=0 && $hours_diff <= $resend_activation_threshold)
 				{
 					$errors[] = lang("ACCOUNT_LINK_ALREADY_SENT",array($resend_activation_threshold));
@@ -68,7 +69,7 @@ if(!empty($_POST) && $emailActivation)
 				{
 					//For security create a new activation url;
 					$new_activation_token = generateActivationToken();
-					
+
 					if(!updateLastActivationRequest($new_activation_token,$username,$email))
 					{
 						$errors[] = lang("SQL_ERROR");
@@ -76,15 +77,15 @@ if(!empty($_POST) && $emailActivation)
 					else
 					{
 						$mail = new userCakeMail();
-						
+
 						$activation_url = $websiteUrl."activate-account.php?token=".$new_activation_token;
-						
+
 						//Setup our custom hooks
 						$hooks = array(
 							"searchStrs" => array("#ACTIVATION-URL","#USERNAME#"),
 							"subjectStrs" => array($activation_url,$userdetails["display_name"])
 							);
-						
+
 						if(!$mail->newTemplateMsg("resend-activation.txt",$hooks))
 						{
 							$errors[] = lang("MAIL_TEMPLATE_BUILD_ERROR");
@@ -134,20 +135,22 @@ echo "<div id='regbox'>";
 
 //Show disabled if email activation not required
 if(!$emailActivation)
-{ 
+{
         echo lang("FEATURE_DISABLED");
 }
 else
 {
-	echo "<form name='resendActivation' action='".$_SERVER['PHP_SELF']."' method='post'>
+	echo "<form name='resendActivation' action='".$_SERVER['PHP_SELF']."' method='post'>";?>
+	<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+	<?php echo "
 	<p>
 	<label>Username:</label>
 	<input type='text' name='username' />
-        </p>     
+        </p>
         <p>
         <label>Email:</label>
         <input type='text' name='email' />
-        </p>    
+        </p>
         <p>
         <label>&nbsp;</label>
         <input type='submit' value='Submit' class='submit' />
@@ -156,7 +159,7 @@ else
 }
 
 echo "
-</div>           
+</div>
 </div>
 <div id='bottom'></div>
 </div>

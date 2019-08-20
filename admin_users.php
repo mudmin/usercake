@@ -10,6 +10,7 @@ if (!securePage($_SERVER['PHP_SELF'])){die();}
 //Forms posted
 if(!empty($_POST))
 {
+	  $token = $_POST['csrf']; if(!Token::check($token)){include('models/token_error.php');}
 	$deletions = $_POST['delete'];
 	if ($deletion_count = deleteUsers($deletions)){
 		$successes[] = lang("ACCOUNT_DELETIONS_SUCCESSFUL", array($deletion_count));
@@ -40,7 +41,9 @@ echo "
 echo resultBlock($errors,$successes);
 
 echo "
-<form name='adminUsers' action='".$_SERVER['PHP_SELF']."' method='post'>
+<form name='adminUsers' action='".$_SERVER['PHP_SELF']."' method='post'>";?>
+<input required type="hidden" name="csrf" value="<?=Token::generate();?>" >
+<?php echo "
 <table class='admin'>
 <tr>
 <th>Delete</th><th>Username</th><th>Display Name</th><th>Title</th><th>Last Sign In</th>
@@ -56,10 +59,10 @@ foreach ($userData as $v1) {
 	<td>".$v1['title']."</td>
 	<td>
 	";
-	
+
 	//Interprety last login
 	if ($v1['last_sign_in_stamp'] == '0'){
-		echo "Never";	
+		echo "Never";
 	}
 	else {
 		echo date("j M, Y", $v1['last_sign_in_stamp']);
